@@ -2,9 +2,9 @@
 
 ## 一、理论概述
 
-Fama-Macbeth回归是1973年Fama和Macbeth为验证CAPM模型而提出的一种因子统计方法，该模型现如今被广泛用被广泛用于计量经济学的面板数据分析，而在金融领域在用于多因子模型的回归检验，用于估计各类模型中的因子暴露和因子收益（风险溢价）。
+Fama-Macbeth回归是1973年Fama和Macbeth为验证CAPM模型而提出的一种因子统计方法，该模型现如今被广泛用于计量经济学的面板数据分析，而在金融领域在用于多因子模型的回归检验，用于估计各类模型中的因子暴露和因子收益（风险溢价）。
 
-Fama-Macbeth与传统的截面回归类似，本质上也与是一个两阶段回归，不同的是它用了巧妙的方法解决了截面相关性的问题，从而得出更加无偏，相合的估计。
+Fama-Macbeth与传统的截面回归类似，本质上也与是一个两阶段回归，不同的是它用巧妙的方法解决了截面相关性的问题，从而得出更加无偏，相合的估计。
 
 **时间序列回归**
 
@@ -58,6 +58,45 @@ Fama-Macbeth回归很好的解决了截面相关性的问题，但对于时间�
 
 
 
-## 二、实现
+## 二、Stata实现
 
-为简单说明Fama-Macbeth两阶段回归的主要步骤，以下用投资组合数据估计一个简单的 CAPM 模型。数据主要使用了「25 Portfolios Formed on Size and Book-to-Market」 中的 25 个投资组合 1926.7-2020.10 期间的月度收益率，和「Fama/French 3 Factors」 中的无风险收益、市场超额收益数据。主要变量如下：
+为简单说明Fama-Macbeth两阶段回归的主要步骤，以下用投资组合数据估计一个简单的 CAPM 模型。数据主要使用了[25 Portfolios Formed on Size and Book-to-Market] 中的 25 个投资组合 1926.7-2020.10 期间的月度收益率(RP.csv)，和[Fama/French 3 Factors] 中的无风险收益、市场超额收益数据(Mkt-RF.csv)。
+
+数据说明：仓库中RP.csv中存储的是25 个投资组合 1926.7-2020.10 期间的月度收益率，每行代表一个月份，每列代表一个投资组合；Mkt-RF.csv存储的是1926.7-2020.10 期间的无风险收益、市场超额收益数据，每行代表一个月份，Mkt-RF和RF列代表市场超额收益率和无风险收益。
+
+数据预处理：
+
+| 变量     | 含义                              |
+| -------- | --------------------------------- |
+| port_num | 投资组合编号，1~25                |
+| t        | 时期，如1936m7格式                |
+| rpe      | 超额收益，投资组合收益-无风险收益 |
+
+第一阶段：
+
+pass1 1930.1-1938.11：25*48次时序回归 （1930.1-1934.12->1933.12-1938.11）
+
+估计$beta_{it}, i=1,2...25$，窗口为五年，每次向后移动一个月
+
+```
+bys port_num: asreg rp mktrf if (t>=ym(1930,1) & t<=ym(1938,12)) , wind(t 60) rmse se newey(4) 
+```
+
+![time-series regression01](\time-series regression01.png)
+
+<img src="\time-series regression02.png" alt="time-series regression02" style="zoom:67%;" />
+
+(_b_mkrtf就是beta)
+
+为了截面回归更方便，直接将自变量取滞后项(beta滞后一个月)
+
+在做截面回归之前，先看一下rpe和beta估计值的关系
+
+<img src="\time-series regression03.png" alt="time-series regression03" style="zoom:50%;" />
+
+该图画出了 1935m1 和 1938m1 两个时间节点上投资组合超额收益率 rpe 和上一月 估计值 **Lbeta** 的关系，横轴是 Lbeta，纵轴是 rpe。
+
+接下来使用xtfmb进行第二阶段估计，也可以用asreg fmb，还可以用statsby
+
+![regression04](\regression04.png)
+
