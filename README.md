@@ -82,9 +82,9 @@ pass1 1930.1-1938.11：25*48次时序回归 （1930.1-1934.12->1933.12-1938.11�
 bys port_num: asreg rp mktrf if (t>=ym(1930,1) & t<=ym(1938,12)) , wind(t 60) rmse se newey(4) 
 ```
 
-![time-series regression01](\time-series regression01.png)
+![time-series regression01](\figures\time-series regression01.png)
 
-<img src="\time-series regression02.png" alt="time-series regression02" style="zoom:67%;" />
+<img src="\figures\time-series regression02.png" alt="time-series regression02" style="zoom:67%;" />
 
 (_b_mkrtf就是beta)
 
@@ -92,11 +92,11 @@ bys port_num: asreg rp mktrf if (t>=ym(1930,1) & t<=ym(1938,12)) , wind(t 60) rm
 
 在做截面回归之前，先看一下rpe和beta估计值的关系
 
-<img src="\time-series regression03.png" alt="time-series regression03" style="zoom:50%;" />
+<img src="\figures\time-series regression03.png" alt="time-series regression03" style="zoom:50%;" />
 
 该图画出了 1935m1 和 1938m1 两个时间节点上投资组合超额收益率 rpe 和上一月 估计值 **Lbeta** 的关系，横轴是 Lbeta，纵轴是 rpe。
 
 接下来使用xtfmb进行第二阶段估计，也可以用asreg fmb，还可以用statsby
 
-![regression04](\regression04.png)
+![regression04](\figures\regression04.png)
 
