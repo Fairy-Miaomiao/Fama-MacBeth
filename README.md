@@ -34,7 +34,7 @@ s是系统性风险，$\epsilon$为残差项
 
 sharpe-lintner capm假定：$\gamma_0=r_f$
 
-详细的步骤为：
+详细的步骤为（以论文为例）：
 
 1、用四年1926-1929的月收益率，对个股进行时序回归，计算出beta，排序分组为20组
 
@@ -85,6 +85,8 @@ u表示残差，$\epsilon$是时间序列回归得到的残差。
 $t=\frac{\bar{\gamma}}{\sqrt{\frac{s{\gamma}}{n}}}$
 
 然后就可以进行假设检验了
+
+![flowchart01](\figures\flowchart01.png)
 
 ## 二、方法概述
 
@@ -196,9 +198,9 @@ $\sigma^2(\hat{\lambda_{OLS}})=\frac{1}{T}[(\beta'\beta)^{-1}\sum\beta(\beta'\be
 
 其中，$\sum_f$是第一阶段回归因子收益率协方差矩阵$cov(f_t,f_t')$，$\sum$是第一阶段回归残差协方差矩阵$cov(\epsilon_t,\epsilon_t')$
 
+**时序相关问题和修正**
 
-
-
+累了，有空再更
 
 ## **四、Newey-West 调整**
 
@@ -206,9 +208,54 @@ Fama-macbeth每一期使用当期因子暴露和个股下一期的收益率进�
 
 对于任何因子，其收益率序列在时序上很可能存在异方差和自相关性，因此在计算其均值标准误的时候需要进行 Newey-West 调整。然而，这和上面的多因子时序回归很不相同。如何进行 Newey-West 调整呢？
 
-简单说明Newey West的原理
+简单说明Newey West的原理：
 
-## 五、Stata实现
+考虑一个线性模型:
+$$
+y=X\beta+\epsilon \\
+E[\epsilon|X]=0 \\
+E[\epsilon\epsilon']=\sigma^2\Omega \\
+\hat{\beta}=(X'X)^{-1}X'y=\beta+(X'X)^{-1}X'\epsilon \\
+\begin{aligned}
+Var[\beta]&=E[(\beta-\hat{\beta})(\beta-\hat{\beta})'|X] \\
+&=\frac{1}{T}(\frac{1}{T}X'X)^{-1}(\frac{1}{T}X'\sigma^2\Omega X)(\frac{1}{T}(X'X)^{-1})
+\end{aligned}
+$$
+当残差不存在异方差和自相关性时，残差协方差阵为单位阵的倍数，回归系数的协方差估计是一致估计量，当残差存在异方差或自相关性时，协方差阵估计有问题，可以通过Newey West调整解决，具体来说是估计上式中的
+
+$Q=\frac{1}{T}X'\sigma^2\Omega X$                
+
+Newey West调整即对Q进行估计，最终给出的估计量具有一致性，表达式如下，用S表示
+
+$S=\frac{1}{T}(\sum_{i=1}^Te_t^2x_Tx_t'+\sum_{l=1}^L\sum_{t=l+1}^Tw_le_te_{t-1}(x_tx_{t-l}'+x_{t-l}x_t'))$
+
+$where \quad w_l=1-\frac{l}{1+L}$
+
+上式中，括号中第一项为仅有异方差时的调整，后面一项为针对自相关的调整，其中，e为样本残差，L为计算自相关性影响的最大滞后阶数，$w_l$是滞后期l的系数，从公式来看，随着滞后期数的增加，影响减小。将S带入系数协方差阵的估计可以得到协方差的Newey West估计量
+
+$Var[\hat{\beta_{NW}}]=T(X'X)^{-1}S(X'X)^{-1}$
+
+以上是对于OLS的Newey West调整，对于Fama Macbeth回归，是对已经回归出来的一堆beta系数序列的方差进行调整，跟回归有一定差别，可以做一个转换：用回归出来的所有beta做因变量，1做自变量，做一个回归，这样回归出来的系数是所有beta的均值，残差也捕捉了beta中的异方差性和自相关性，对这个回归方程做newey west即可
+
+Turan Bali、Robert Engle、Scott Murray 三位所著的经典教材 Empirical Asset Pricing, the cross section of stock returns（Bali et al. 2016）提出对于单个因子的收益率序列，将其用 1 作为 regressor 回归得到残差 —— 这相当于用因子收益率减去它在时序上的均值。然后把这个残差和 **X = 1** 代入到 Newey-West 调整中即可。
+
+在这个简化版的Newey-West 调整中，Q的估计S简化为：
+
+$S=\frac{1}{T}{\sum_{t=1}^T}e_t^2+2\sum_{t=1}^L\sum_{t=l+1}^Tw_le_te_{t-1}$
+
+$where \quad e_t=f_t-E_t[f_t] \quad w_l=1-\frac{l}{1+L}$
+
+其中 $f_t $代表被检验因子的收益率时间序列，$E_t[f_t]$ 是它在时序上的均值。由于我们仅仅有一个 regressor，因此上述S其实是一个标量。将它代入到 **V**_OLS 的表达式中，在对其开方，就得到 $E_t[f_t]$ 的标准误:
+
+$s.e.(E_t[f_t])=\sqrt{S/T}$
+
+对每个因子依次使用上述修正，获得其各自收益率均值的 standard error，然后就可以计算 t统计量以及 p-value 并检验它们的显著性
+
+
+
+## 五、遗漏变量偏差与mimicking portfolio
+
+## 六、Stata实现
 
 为简单说明Fama-Macbeth两阶段回归的主要步骤，以下用投资组合数据估计一个简单的 CAPM 模型。数据主要使用了[25 Portfolios Formed on Size and Book-to-Market] 中的 25 个投资组合 1926.7-2020.10 期间的月度收益率(RP.csv)，和[Fama/French 3 Factors] 中的无风险收益、市场超额收益数据(Mkt-RF.csv)。
 
