@@ -257,6 +257,49 @@ $s.e.(E_t[f_t])=\sqrt{S/T}$
 
 ## 五、遗漏变量偏差与mimicking portfolio
 
+如果遗漏了一些定价因素，则线性资产定价模型中风险溢价的标准估计量就会是有偏差的，即遗漏变量偏差。mimicking-portfolio approach通常选择一小部分投资组合（例如，按规模和按市场数量分类的投资组合）来预测收益率。但是理论上不能保证控制或跨越组合足以纠正遗漏的变量偏差。
+
+假设$v_t=(v_{1t},v_{2t})^T$是一个包含两个潜在相关因子的向量。
+考虑模型：
+$
+    r_t=\beta\gamma+\beta v_t+u_t
+$
+其中，$u_t$是特异性风险，$\beta=(\beta_1:\beta_2)$是风险暴露矩阵，$\gamma=(\gamma_1:\gamma_2)$是两个因子的风险溢价。我们关心的是估计第一个因子$v_{1t}$（记为$g_t$)的代理风险溢价，在上面的简单假设中他的风险溢价就是$\gamma_1$。
+
+Fama-Macbeth的做法是：首先，将每个测试资产的超额回报进行时间序列回归，估计出资产的风险暴露，$\beta_1$和$\beta_2$。然后，对估计的$\beta_1$和$\beta_2$进行截面回归，得到$\gamma_1$和$\gamma_2$的风险溢价估计。
+
+而mimicking-portfolio方法通过将因子投射到一组可交易的资产回报上来估计$g_t$的风险溢价，因此构建一个与$g_t$最大相关的可交易投资组合（这也是为什么他也被称作是最大相关的模拟投资组合）。$g_t$的风险溢价随后被估计为其模拟投资组合的平均超额收益。
+
+首先考虑估计截面回归中$g_t=v_{1t}$的风险溢价，此时遗漏了$v_{2t}$。这个遗漏会在两个阶段中都产生偏差：
+1、 只要$v_{2t}$与$v_{1t}$相关，时序回归中就会产生$\beta_1$的有偏估计。偏差的大小取决于这些因子的时序相关性。
+2、第二次偏差发生在第二步截面回归中，我们本希望将平均收益回归到整个风险暴露矩阵$\beta$上，但是因为$v_{2t}$被忽略了，所以实际只使用了$\tilde{\beta_1}$。偏差的大小取决于$\beta_1$和$\beta_2$的截面相关性。
+\end{enumerate}
+这两种偏差（第一步遗漏的$v_{2t}$和第二步遗漏的$\beta_2$)都会影响$g_t$的风险溢价的估计。
+
+在mimicking-portfolio方法中，遗漏变量偏差可能会来源于$g_t$被投射到的资产的遗漏。考虑$g_t=v_{1t}$对一组测试资产的超额收益的映射，$\tilde{r_t}$。这个映射产生的系数是$w^g=Var(\tilde{r_t})^{-1}Cov(\tilde{r_t},g_t)$，这些是$g_t$的模拟投资组合的权重，其超额回报是$r_t^g=(w^g)^T\tilde{r_t}$。
+
+因此，我们可以将模拟组合的期望超额收益写成：
+$
+    \gamma_g^{MP}=(w^g)^TE(\tilde{r_t})
+$
+由于测试资产$\tilde{r_t}$遵循与$r_t$相同的定价模型。我们可以写为：
+$
+    \tilde{r_t}=\tilde{\beta}\gamma+\tilde{\beta}v_t+\tilde{u_t}
+$
+
+同样的，我们可以写出mimicking-portfolio的第一个因子的风险溢价：
+$
+    \gamma_g^{MP}=((\tilde{\beta}\sum ^v\tilde{\beta}^T+\tilde{\sum ^u})^{-1}(\tilde{\beta}\sum^v e_1))^T\tilde{\beta}\gamma
+$
+其中$e_1$是列向量$(1,0)^T$，$\sum^v$是因子协方差矩阵，$\tilde{\sum^u}$是映射中使用的资产的特异性风险的协方差矩阵。
+
+上述公式表明，并非所有的$g_t$投影到的资产的选择都会带来$\gamma_1$的一致估计，也就是说不能保证$\gamma_g^{MP}=\gamma_1$
+
+但是只要满足以下两个条件，那么就有$\gamma_g^{MP}=\gamma_1$，如果被选作为投资组合的资产：
+1、很多样化$\tilde{\sum}^u \approx 0$
+2、完全涵盖真实的因子$v_t$，这样$\tilde{\beta}$是可逆的并且$v_t=\tilde{\beta}^{-1}\tilde{r_t}$
+然而，当这些条件不满足时，模拟投资组合估计通常会有偏差。特别是，如果在预测中使用的资产集忽略了一些有助于跨越$v_t$中所有风险因素的投资组合，那么模拟投资组合估计将会有偏差。
+
 ## 六、Stata实现
 
 为简单说明Fama-Macbeth两阶段回归的主要步骤，以下用投资组合数据估计一个简单的 CAPM 模型。数据主要使用了[25 Portfolios Formed on Size and Book-to-Market] 中的 25 个投资组合 1926.7-2020.10 期间的月度收益率(RP.csv)，和[Fama/French 3 Factors] 中的无风险收益、市场超额收益数据(Mkt-RF.csv)。
@@ -300,3 +343,26 @@ bys port_num: asreg rp mktrf if (t>=ym(1930,1) & t<=ym(1938,12)) , wind(t 60) rm
 ![regression04](\figures\regression04.png)
 
 [基于机器学习方法的宏观因子模拟投资组合构建 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/105379929)
+
+[多因子回归检验中的 Newey-West 调整 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/54913149)
+
+[Fama-Macbeth 回归和Newey-West调整 - 云+社区 - 腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1561359)
+
+## 七、一些可能的问题
+
+1、面板数据
+
+面板数据，即Panel Data，也叫“平行数据”，是指在时间序列上取多个截面，在这些截面上同时选取样本观测值所构成的样本数据。或者说他是一个m*n的数据矩阵，记载的是n个时间节点上，m个对象的某一数据指标。
+
+
+
+[Fama-Macbeth小组第一次汇报v2.0 (maifile.cn)](https://maifile.cn/pdf/a78969723813.pdf)
+
+
+
+
+
+
+
+
+
