@@ -90,6 +90,8 @@ $t=\frac{\bar{\gamma}}{\sqrt{\frac{s{\gamma}}{n}}}$
 
 ![flowchart01](\figures\flowchart01.png)
 
+[重读Fama——从CAPM到Fama-Macbeth回归再到三因子 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/131533515)
+
 ## 二、方法概述
 
 Fama-Macbeth与传统的截面回归类似，本质上也与是一个两阶段回归，不同的是它用巧妙的方法解决了截面相关性的问题，从而得出更加无偏，相合的估计。
@@ -204,7 +206,7 @@ $\sigma^2(\hat{\lambda_{OLS}})=\frac{1}{T}[(\beta'\beta)^{-1}\sum\beta(\beta'\be
 
 累了，有空再更
 
-## 四、Newey-West 调整
+## 四、非球型扰动项及Newey-West 调整
 
 Fama-macbeth每一期使用当期因子暴露和个股下一期的收益率进行截面回归，得到因子的收益率；在全部期进行截面回归后，便可得到每个因子收益率的时间序列。将因子收益率在时序上取均值就得到每个因子的预期收益率，而我们关心的是该因子预期收益率是否显著不为零。
 
@@ -253,6 +255,48 @@ $s.e.(E_t[f_t])=\sqrt{S/T}$
 
 对每个因子依次使用上述修正，获得其各自收益率均值的 standard error，然后就可以计算 t统计量以及 p-value 并检验它们的显著性
 
+推导FM中的标准误：
+
+当残差不独立时，估计回归系数和标准误差的另一种方法是法马-麦克贝斯方法(Fama和MacBeth，1973)。在这种方法中，研究人员进行了T次横断面回归。T估计数的平均值为系数估计数：
+
+
+$$
+\begin{aligned}
+\hat{\beta}_{FM}&=\sum_{t=1}^T \frac{\hat{\beta}_t}{T}\\
+&=\frac{1}{T}\sum_{t=1}^T (\frac{\sum_{i=1}^N X_{it}Y_{it}}{\sum_{i=1}^NX_{it}^2})=\beta+\frac{1}{T}\sum_{t=1}^T(\frac{\sum_{i=1}^N X_{it}\epsilon_{it}}{\sum_{i=1}^N X_{it}^2})
+\end{aligned}
+$$
+法马-麦克贝估计的估计方差计算为:
+$$
+S^2(\hat{\beta}_{FM})=\frac{1}{T}\sum_{t=1}^T\frac{(\hat{\beta}_t-\hat{\beta}_{FM})^2}{T-1}
+$$
+上面这个方差公式假设了系数($\beta_t$)的估计量是相互独立的，但这仅在$X_{it}\epsilon_{it}$与$X_{is}\epsilon_{is}$(t!=s)独立的时候才是对的。如果存在firm effect($i.e.,\rho_X\rho_{\epsilon} !=0$)。因此，在存在firm effect的情况下，FM方差估计太小了。在这种情况下，FM估计的渐近方差为
+$$
+\begin{aligned}
+Avar(\hat{\beta}_{FM})&=\frac{1}{T^2}Avar(\sum_{t=1}^T\hat{\beta_t})\\
+&=\frac{Avar(\hat{\beta}_t)}{T}+\frac{2\sum_{t=1}^{T-1}\sum_{s=t+1}^T Acov(\hat{\beta}_t,\hat{\beta}_s)}{T^2}\\
+&=\frac{Avar(\hat{\beta}_t)}{T}+\frac{T(T-1)}{T^2}Acov(\hat{\beta}_t,\hat{\beta}_s)
+\end{aligned}
+$$
+其中，
+$$
+\begin{aligned}
+ACov(\hat{\beta}_t,\hat{\beta}_s)=&{plim}_{N \rightarrow \infin}[(\frac{\sum_{i=1}^N X_{it}^2}{N})^{-1})(\frac{\sum_{i=1}^N X_{it}\epsilon_{it}}{N})]\\
+&*(\frac{\sum_{i=1}^N X_{is}\epsilon_{is}}{N})(\frac{\sum_{i=1}^N X_{is}^2}{N})^{-1}]\\
+&=(\sigma_X^2)^{-2}{plim}_{N \rightarrow \infin}[(\frac{\sum_{i=1}^N  X_{it}\epsilon_{it}}{N})(\frac{\sum_{i=1}^N  X_{is}\epsilon_{is}}{N})] \\
+&=(\sigma_X^2)^{-2}{plim}_{N \rightarrow \infin}[\frac{\sum_{i=1}^N  X_{it} X_{is}\epsilon_{it}\epsilon_{is}}{N}]\\
+&=(\sigma_X^2)^{-2}\frac{N\rho_X \sigma_X^2\rho_{\epsilon}\sigma_{\epsilon}^2}{N^2}\\
+&=\frac{\rho_X \rho_{\epsilon}\sigma_{\epsilon}}{N\sigma_X^2}
+\end{aligned}
+$$
+代入得FM系数估计的渐近方差的表达式：
+$$
+\begin{aligned}
+Avar(\hat{\beta}_{FM})&=\frac{Avar(\hat{\beta}_t)}{T}+\frac{T(T-1)}{T^2}ACov(\hat{\beta}_t,\hat{\beta}_s)\\
+&=\frac{1}{T}(\frac{\sigma_{\epsilon}}{N\sigma_X^2})+\frac{T(T-1)}{T^2}(\frac{\rho_X \rho_{\epsilon}\sigma_{\epsilon}^2}{N\sigma_X^2}) \\
+&=\frac{\sigma_{\epsilon}^2}{NT\sigma_X^2}(1+(T-1)\rho_X\rho_{\epsilon})
+\end{aligned}
+$$
 
 
 ## 五、遗漏变量偏差与mimicking portfolio
@@ -360,9 +404,194 @@ bys port_num: asreg rp mktrf if (t>=ym(1930,1) & t<=ym(1938,12)) , wind(t 60) rm
 
 
 
+## 第一次汇报上半部分的问题的课后解答
 
+1、CAPM
 
+$E(\hat{R_i})=E(\hat{R_0})+[E(\hat{R_m})-E(\hat{R_0})]\beta_i$ （*）
 
+上式有三个可以验证的条件：
 
+C1、风险与收益的关系是线性的
 
+C2、$\beta$是对系统性风险的完全度量
+
+C3、$r_m-r_f>0$，在一个风险规避的世界，更高的风险要有更高的收益
+
+为了验证条件CI-C3，我们必须确定一些有效的投资组合。这反过来又要求在投资者做出投资组合决策时，明确说明市场平衡的特征。
+
+假设资本市场是完美的。此外，假设所有投资者都可以从无成本获得的信息中得出对任何资产或投资组合未来价值分布的相同和正确的评估——这种假设通常被称为“同质预期”。最后，假设允许卖空所有资产。然后Black（1972）表明，在市场均衡的情况下，所谓的市场投资组合，由权重定义
+
+$$
+x_{im}=\frac{total \quad market \quad value \quad of \quad all \quad units \quad of \quad asset \quad i}{total \quad market \quad value \quad of \quad all  \quad assets}
+$$
+总是有效的。
+
+由于市场组合包含所有正金额资产，市场组合是检验预期回报风险条件CI-C3的一个方便的参考点。同质期望假设意味着对回报分布的事前评估和事后回报分布之间的对应关系，这也是对这三个假设进行有意义的检验所必需的。
+
+方程（ * ）是根据预期回报计算的。但其影响必须通过逐期证券和投资组合回报的数据进行检验。我们希望选择一个逐周期返回的模型，允许我们使用观察到的平均回报来测试预期回报条件C1-C3，但这个模型仍然尽可能普遍。我们建议采用以下对（ * ）进行随机推广的方法：
+$$
+\bar{R_{it}}=\hat{\gamma_{0t}}+\hat{\gamma_{1t}}\beta_i+\hat{\gamma_{2t}}\beta_i^2+\hat{\gamma_{3t}}s_i+\hat{\eta_{it}}
+$$
+下标t代表时期t，所以$\hat{R_{it}}$是t-1期到t期的资产i的回报。上式允许$\hat{\gamma_{0t}}$和$\gamma_{1t}$在不同时期随机变化。C3假设是预期风险收益$\hat{\gamma_{1t}}$(在式( * )中是$[E(\hat{R_{mt}})-E(\hat{R_{0t}})]$)是正的，换句话说就是$E(\hat{\gamma_{1t}})=E(\hat{R_{mt}})-E(\hat{R_{0t}})>0$
+
+上式中的$\beta_i^2$是为了验证线性性的。C1的假设是$E(\hat{\gamma_{2t}})=0$尽管$\hat{\gamma_{2t}}$被允许随着时期随机变化。$s_i$也是类似的，这意味着资产i不具有除了与$\beta_i$以外的系统性风险。C2假设是$E(\hat{\gamma_{3t}})=0$但是$\hat(\gamma_{3t})$也可以随着时间随机变化。
+
+扰动项$\hat{\eta_{it}}$被认为是有均值0并且独立于其他任何变量。如果所有投资组合回报的分布是正态的，那么变量$\hat{\eta_{it}},\hat{\gamma_{0t}},\hat{\gamma_{1t}},\hat{\gamma_{2t}},\hat{\gamma_{3t}}$必须具有多元正态（或对称稳定）分布。
+
+c1-c3是双参数模型所隐含的预期回报和风险的条件。但该模型，尤其是对完美市场的基本假设，意味着一个有效的资本市场，因为每个时间点的价格都完全反映了可用的信息。当然，“效率”这个词的使用不要与投资组合效率混淆。这个术语，如果有点不幸的话，也至少是标准的。
+
+结合条件C1的市场效率要求对随机非线性系数$\hat{\gamma_{2t}}$的时间序列的审查不会导致$\hat{\gamma_{2t}}$的预期未来值的非零估计。在形式上，$\hat{\gamma_{2t}}$必须是一个fair game。在实际操作中，虽然非线性可以在事后观察到，因为$\hat{\gamma_{2t}}$是一个公平的博弈，但在（ * ）总结的双参数模型有效的假设下，投资者预先行动总是合适的。也就是说，在他的投资组合决策中，他总是假定证券的风险与其预期回报之间存在线性关系。同样，双参数模型中的市场效率要求非$\beta$风险系数$\hat{\gamma_{3t}}$和返回干扰的时间序列$\hat{\eta_{it}}$，是fair game。公平博弈假设也适用于$\hat{\gamma_{1t}}-[E(\hat{R_{mt}})-E(\hat{R_{0t}})]$的时间序列，即t期的风险溢价与期望值之间的差值。
+
+在Fama(1970b)的术语中，这些都是关于一个由双参数模型产生预期回报的市场的资本市场效率的“弱形式”的命题。这些主张很弱，因为它们只关心价格是否完全反映了过去回报时间序列中的任何信息。”“强形式”的测试将涉及到对所有现有信息调整价格的速度。
+
+White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity. *Econometrica: journal of the Econometric Society*, 817-838.
+
+Newey, W. K., & West, K. D. (1987). Hypothesis testing with efficient method of moments estimation. *International Economic Review*, 777-787.
+
+Newey, W. K., & West, K. D. (1986). A simple, positive semi-definite, heteroskedasticity and autocorrelationconsistent covariance matrix.
+
+Shanken, J. (1992). On the estimation of beta-pricing models. *The review of financial studies*, *5*(1), 1-33.
+
+2、异方差与自相关
+
+考虑如下的线性模型
+$$
+\begin{aligned}
+y&=X\beta+\epsilon \\
+E[\epsilon|X]&=0 \\
+E[\epsilon \epsilon'|X]&=\sigma ^2 \Omega=\sum
+\end{aligned}
+$$
+其中，y是T*1阶向量（T 代表时序的总期数）；**X** 是 T × K 阶矩矩阵（其中 K 是 regressors 的个数）；**ε** 是 T × 1 阶残差向量；**Σ**（T × T 阶）是残差的协方差矩阵。回归的目的是为了得到回归系数 **β**（K × 1 阶矩阵）并检验它们的显著性。
+
+在球形扰动项的假设下，$\Omega$是单位阵I
+
+在广义线性回归中，残差常常表现出异方差和自相关两种特性。此时$\Omega$显然不是单位阵
+
+对于异方差（但仍然可以假设独立），通常有：
+$$
+\sigma ^2 \Omega=\sigma^2
+\left[ 
+\begin{array}{l}  
+w_{11} & 0 &...&0\\
+0 & w_{22} & ... & 0 \\
+... & ... & ... & ... \\
+0 & 0 & ... & w_{TT}
+\end{array}\right]
+=
+\left[ 
+\begin{array}{l}  
+\sigma_1^2 & 0 &...&0\\
+0 & \sigma_2^2 & ... & 0 \\
+... & ... & ... & ... \\
+0 & 0 & ... & \sigma_T^2
+\end{array}\right]
+$$
+对于自相关（但同方差），通常有
+$$
+\sigma ^2 \Omega=\sigma^2
+\left[ 
+\begin{array}{l}  
+1 & \rho_1 & ...& \rho_{T-1} \\
+\rho_1 & 1 & ... & \rho_{T-2} \\
+... & ... & ... & ... \\
+\rho_{T-1} & \rho_{T-2} & ... & 1\\
+\end{array}\right]
+$$
+如果$\Omega$已知，通常使用GLS。但当GLS未知时，OLS往往是首选。对上述线性模型进行OLS求解就可以得到$\beta$的OLS估计，记为:$\hat{\beta}$
+
+$\hat{\beta}=(X'X)^{-1}X'Y=\beta+(X'X)^{-1}X'\epsilon$
+
+对上式两边取期望，则当$E[\epsilon|X]=0$的假设成立时易知$E[\hat{\beta}]=\beta$，进而推导出$\hat{\beta}$的协方差矩阵，记为$V_{OLS}$：
+$$
+\begin{aligned}
+V_{OLS}&=E[(\hat{\beta}-\beta)(\hat{\beta}-\beta)'|X] \\
+&=E[(X'X)^{-1}X'\epsilon \epsilon'X(X'X)^{-1}|X] \\
+&=(X'X)^{-1}X'(\sigma^2 \Omega) X(X'X)^{-1} \\
+&=\frac{1}{T}(\frac{1}{T}X'X)^{-1}(\frac{1}{T}X'[\sigma^2\Omega]X)(\frac{1}{T}X'X)^{-1}
+\end{aligned}
+$$
+当残差不存在异方差以及自相关性时，**Ω** = **I** 而上面的协方差矩阵也可以简化成我们最熟悉的经典 OLS 里面的形式，也就是各种 OLS 软件包给出的参数的标准误（协方差矩阵对角线元素的平方根）和 t-statistic 的结果。然而，当残差存在异方差或者自相关时，OLS 得到的 β 的方差的估计是不准确的，从而影响对 β 进行统计检验。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+在 **Ω** 未知的情况下，需对 **V**_OLS 进行估计。上面的表达式可以看成是三个矩阵相乘的形式，其中第一个和第三个仅和 **X** 有关，因此**核心目标就是估计中间矩阵（middle matrix）。**为了方便讨论，令**Q** 代表中间的矩阵：
+$$
+\begin{aligned}
+Q&=\frac{1}{T}X'[\sigma^2\Omega]X \\
+&= \frac{1}{T} \sum_{i=1}^T \sum_{j=1}^T \sigma_{ij}x_i x_j'
+\end{aligned}
+$$
+其中$x_i=[x_{i1},x_{i2},...,x_{iK}]'$，即X的第i行的转置。只要我们能找到矩阵Q的估计，就能进而求出$\hat{\beta}$的协方差矩阵$V_{OLS}$。
+
+针对残差的假设不同，最常见的两种估计是 White 估计（仅假设异方差）以及 Newey and West 估计（考虑异方差及自相关）。
+
+当残差仅有异方差但没有自相关时，我们需要的估计量 **Q** 简化为：
+
+$Q=\frac{1}{T}\sum_{i=1}^T \sigma^2 x_i x_i'$
+
+（因为i!=j时，协方差矩阵对应的格子是0）
+
+White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity. *Econometrica: journal of the Econometric Society*, 817-838.
+
+White(1980)指出使用X及样本残差e可以求出Q的渐进估计（记为$S_0$):
+
+$S_0=\frac{1}{T}\sum_{i=1}^Te_i^2x_ix_i'$
+
+将上述Q的估计$S_0$代入到 V_OLS 的表达式中，可以得到$\hat{\beta}$的协方差矩阵的估计：
+$$
+\begin{aligned}
+V_{OLS}&=\frac{1}{T}(\frac{1}{T}X'X)^{-1}(\frac{1}{T}\sum_{i=1}^Te_i^2x_ix_i')(\frac{1}{T}X'X)^{-1} \\
+&=T(X'X)^{-1}S_0(X'X)^{-1}
+\end{aligned}
+$$
+这意味着哪怕我们对异方差的取值或结构一无所知，我们仍然可以根据最小二乘的结果进行适当的推断。
+
+在实际问题中，除了异方差外，仍需考虑残差的自相关性。为此，一个自然的想法是将上述 **Q** 的估计延伸到对角线之外的元素，即：
+
+$S=\frac{1}{T}\sum_{i=1}^T \sum_{j=1}^T e_{ij} x_i x_j'$
+
+但是这种方法有两个问题，使得他不是正确的：
+
+1、表达式一共有T*T项求和，但是他的系数仅仅是1/T，所以S可能不完全收敛
+
+2、即使S收敛，他也很可能不是正定的，从而使得最后估计的$\hat{\beta}$的协方差矩阵不是正定的，这显然有违常理。
+
+于是，Newey and West (1987）给出了当残差同时存在异方差和自相关时，**Q** 的估计，记为 **S**：
+
+$S=\frac{1}{T}\{ \sum_{t=1}^T e_t^2x_tx_t'+ \sum_{l=1}^L\sum_{t=l+1}^T w_le_te_{t-l}(x_tx_{t-l}'+x_{t-l}x_t')\}$
+
+$where \quad w_l=1-\frac{l}{1+L}$
+
+上式中，大括号中的第一项对应仅有异方差情况下的 $S_0$，而后面第二项则是针对自相关性的修正。其中 L 是计算自相关性影响的最大滞后阶数（Newey and West 1994 给出了自动计算 L 取值的自适应算法），w_l 是滞后期 l 的系数，其隐含的意思是自相关性的影响随着滞后期 l 的增大而减小。在实际计算时，考虑到自由度的问题，为了得到无偏估计可以将上式中大括号外面的 1/T 换成 1/(T - K)；大括号内部的求和项仍是 T 项及 L × T 项。
+
+将S带入到$V_{OLS}$的表达式中，得到Newey West估计量：
+
+$V_{OLS}=T(X'X)^{-1}S(X'X)^{-1}$
+
+在时序OLS回归中，Newey West调整同时作用于多个回归量的回归系数，从而求出$\hat{\beta}$的协方差矩阵，常见于因子分析中的投资组合测试中，具体方法为：
+
+1、使用目标因子投资组合的收益率序列和（多个）已有因子收益率在时序上OLS回归（同时带截距项，代表超额收益部分；假设已有因子 + 截距项一共 K 个 回归变量），得到残差；
+
+2、使用截距项和已有因子收益率序列X和残差e，通过Newey-West 调整求出 V_OLS；
+
+3、将 V_OLS 的对角线元素开平方，其平方根就是参数$\hat{\beta}$的标准误（一共 K 个，对应 K 个 regressors）；
+
+4、使用$\hat{\beta}$的估计和 Newey-West 调整后的标准误计算出这些参数的 t-statistics，从而判断它们的显著性。
+
+在因子分析中，Fama-MacBeth regression 是最常见的截面回归方法（Fama and MacBeth 1973）。在该回归中，每一期使用当期因子暴露和个股下一期的收益率进行截面回归，得到因子的收益率；在全部期进行截面回归后，便可得到每个因子收益率的时间序列。将因子收益率在时序上取均值就得到每个因子的预期收益率，而我们关心的是该因子预期收益率是否显著不为零。
+
+对于任何因子，其收益率序列在时序上很可能存在异方差和自相关性，因此在计算其均值标准误的时候需要进行 Newey-West 调整。然而，这和上面的多因子时序回归很不相同。如何进行 Newey-West 调整呢？
+
+对于单个因子的收益率序列，将其用 1 作为 regressor 回归得到残差 —— 这相当于用因子收益率减去它在时序上的均值。然后把这个残差和 X = 1 代入到 Newey-West 调整中即可。
+
+在这个简化版的Newey West调整中，Q的估计S简化为：
+$$
+S=\frac{1}{T}{\sum_{t=1}^Te_t^2+2\sum_{l=1}^L \sum_{t=l+1}^Tw_le_te_{t-l}}\\
+where \quad e_t=f_t-E_t[f_t],w_l=1-\frac{l}{1+L}
+$$
+其中 $f_t$ 代表被检验因子的收益率时间序列，$E_t[f_t]$ 是它在时序上的均值。由于我们仅仅有一个 regressor，因此上述S 其实是一个标量。将它代入到 $V_OLS$ 的表达式中，在对其开方，就得到 $E_t[f_t]$ 的标准误：
+
+$s.e.(E_t[f_t])=\sqrt{S/T}$
+
+对每个因子依次使用上述修正，获得其各自收益率均值的 standard error，然后就可以计算 t-statistic 以及 p-value 并检验它们的显著性。
 
