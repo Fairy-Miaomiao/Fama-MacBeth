@@ -404,9 +404,13 @@ bys port_num: asreg rp mktrf if (t>=ym(1930,1) & t<=ym(1938,12)) , wind(t 60) rm
 
 
 
-## 第一次汇报上半部分的问题的课后解答
+## 第一次汇报上半部分的问题的课后思考
 
-1、CAPM
+### 1、关于公式2的理解
+
+<img src="C:\Users\dell\AppData\Roaming\Typora\typora-user-images\image-20220327192453891.png" alt="image-20220327192453891" style="zoom:80%;" />
+
+以下参考原文(Fama, E. F., & MacBeth, J. D. (1973). Risk, return, and equilibrium: Empirical tests. *Journal of political economy*, *81*(3), 607-636.)：
 
 $E(\hat{R_i})=E(\hat{R_0})+[E(\hat{R_m})-E(\hat{R_0})]\beta_i$ （*）
 
@@ -445,15 +449,37 @@ c1-c3是双参数模型所隐含的预期回报和风险的条件。但该模型
 
 在Fama(1970b)的术语中，这些都是关于一个由双参数模型产生预期回报的市场的资本市场效率的“弱形式”的命题。这些主张很弱，因为它们只关心价格是否完全反映了过去回报时间序列中的任何信息。”“强形式”的测试将涉及到对所有现有信息调整价格的速度。
 
-White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity. *Econometrica: journal of the Econometric Society*, 817-838.
+然后我的理解（如有不对欢迎指正）：
 
-Newey, W. K., & West, K. D. (1987). Hypothesis testing with efficient method of moments estimation. *International Economic Review*, 777-787.
+1、$\beta$和$\gamma$是什么？
 
-Newey, W. K., & West, K. D. (1986). A simple, positive semi-definite, heteroskedasticity and autocorrelationconsistent covariance matrix.
+以CAPM为例，$\beta$是市场风险因子，$\beta^2$是非线性的市场风险，$\gamma_2$是回报率与非线性市场风险的关系。
+
+这里比较容易产生误解的地方在于，（2）式中的$\beta$和普通CAPM中的$\beta$含义不同，普通CAPM中的$\beta$一般是指市场组合的风险暴露，而（2）式中的$\beta$却是指市场风险。
+
+2、s是什么？
+
+s是除了$\beta$以外的其他宏观风险。$\gamma_3$是他的风险暴露。
+
+
+
+参考文献
+
+[1]Fama, E. F., & MacBeth, J. D. (1973). Risk, return, and equilibrium: Empirical tests. *Journal of political economy*, *81*(3), 607-636.
+
+[2]White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity. *Econometrica: journal of the Econometric Society*, 817-838.
+
+[3]Newey, W. K., & West, K. D. (1987). Hypothesis testing with efficient method of moments estimation. *International Economic Review*, 777-787.
+
+[4]Newey, W. K., & West, K. D. (1986). A simple, positive semi-definite, heteroskedasticity and autocorrelationconsistent covariance matrix.
+
+[5]Giglio, S., & Xiu, D. (2021). Asset pricing with omitted factors. *Journal of Political Economy*, *129*(7), 1947-1990.
 
 Shanken, J. (1992). On the estimation of beta-pricing models. *The review of financial studies*, *5*(1), 1-33.
 
-2、异方差与自相关
+
+
+### 2、异方差与自相关部分推导
 
 考虑如下的线性模型
 $$
@@ -594,4 +620,57 @@ $$
 $s.e.(E_t[f_t])=\sqrt{S/T}$
 
 对每个因子依次使用上述修正，获得其各自收益率均值的 standard error，然后就可以计算 t-statistic 以及 p-value 并检验它们的显著性。
+
+[协方差矩阵的 Newey-West 调整 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/38506157)
+
+### 3、遗漏变量偏差中的定价模型
+
+假设$v_t=(v_{1t},v_{2t})^T$是一个包含两个潜在相关因子的向量。假设他们都是去均值化的，他们可以被看作是 factor innovations（？）。原论文中主要考虑 nontradable factors，他们的均值和风险溢价没有直接相关性。这就是为什么我们直接根据因素创新来编写模型。当然，如果这些因素是 tradable，那么这些因素本身的平均值——减去无风险率——就是风险溢价，在这种情况下，我们在这里讨论的方法仍然作为风险溢价的替代估计器有效。
+假设观察到无风险率，我们用超额回报来表示该模型：
+$
+    r_t=\beta\gamma+\beta v_t+u_t
+$
+其中，$u_t$是特异性风险，$\beta=(\beta_1:\beta_2)$是风险暴露矩阵，$\gamma=(\gamma_1:\gamma_2)$是两个因子的风险溢价。我们关心的是估计第一个因子$v_{1t}$（记为$g_t$)的代理风险溢价，在上面的简单假设中他的风险溢价就是$\gamma_1$。
+
+
+
+## 八、Empirical Tests of Asset Pricing Models with Individual Assets:Resolving the Errors-in-Variables Bias in Risk Premium Estimation
+
+基于个体资产的资产定价模型的实证检验：解决风险溢价估计中的变量内误差偏差
+
+为了减少固有的变量误差偏差，投资组合被广泛用于风险溢价估计；但投资组合可能会多样化，从而掩盖个别资产的相关风险或回报相关特征。我们提出了一个解决方案，允许使用individual资产，同时避免偏差。它取决于特定的工具变量，根据交替观测结果计算出的因素敏感性（$\beta$‘）。给出了大截面和时间序列的闭型渐近性。仿真表明，IV方法提供了无偏风险溢价估计和明确的小样本足够功率的测试。实证实施发现一些证据，规模和市场价值的显著风险溢价。然而，在控制非β特征时，CAPM、规模、市场账面价值、投资、盈利能力和流动性调整CAPM的估计风险溢价不显著。
+
+1.Introduction
+
+引言提出了研究的两条路线。
+
+从单因子的CAPM和多因子APT开始，第一条研究方向已经提出了大量的风险因素候选者。
+
+由于有大量的单个资产(=N)，EIV偏差可以通过使用投资组合而不是单个资产来减少。但是使用投资组合也有自身缺陷。由于降低了维度，**测试能力**是一个直接的问题；也就是说，投资组合不可避免地存在的解释变量比单个资产少。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
